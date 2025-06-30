@@ -1,0 +1,14 @@
+/* frontend/src/tailwind-input.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Add any custom global CSS rules ONLY IF ABSOLUTELY NECESSARY, AFTER @tailwind directives */
+/* For example: */
+body {
+  /* Set a default background that isn't handled by Tailwind's base preflight */
+  background-color: #f8fafc;
+}
