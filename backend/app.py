@@ -5,7 +5,8 @@ import numpy as np
 import json
 import logging
 import asyncio
-from guardian import fetch_guardian_articles
+from apis.guardian import fetch_guardian_articles
+from scraping.semianalysis import scrape_semianalysis_articles
 import hashlib
 import random
 
@@ -65,7 +66,7 @@ async def classify_sector_and_topic(article_title, article_description, existing
     try:
         # OpenAI client methods are synchronous, not async
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that classifies news articles into market sectors, identifies topics, and ranks their importance. Your output must be a JSON object with 'sector', 'topic_name', and 'topic_importance' keys. Ensure 'topic_importance' is an integer between 1 and 10."},
                 {"role": "user", "content": prompt}
@@ -105,19 +106,19 @@ async def summarize_content(texts):
     combined_text = "\n\n".join(texts)
     
     prompt_instruction = (
-        "Synthesize the following news content into a comprehensive, in-depth summary of approximately two paragraphs. "
+        "Synthesize the following news content into a comprehensive summary that preserves information but avoids redundancy and is concise. "
         "Identify the core topic, provide key details, and integrate information from all sources to avoid redundancy. "
-        "Focus on being informative and concise without unnecessary fluff or quotes. "
+        "Focus on being informative and concise without unnecessary fluff or quotes, unless the quote is integral to the topic. "
         "This summary should give a full picture of the specific topic."
     )
-    max_tokens = 500
+    max_tokens = 2000
 
     prompt = f"{prompt_instruction}\n\nContent:\n{combined_text}"
 
     try:
         # OpenAI client methods are synchronous, not async
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that summarizes news content concisely and accurately."},
                 {"role": "user", "content": prompt}
@@ -133,7 +134,9 @@ async def summarize_content(texts):
 
 async def fetch_and_store_news():
     logging.info("Starting fetch_and_store_news...")
-    articles = await asyncio.to_thread(fetch_guardian_articles) 
+    # guardian_articles = await asyncio.to_thread(fetch_guardian_articles)
+    semianalysis_articles = await asyncio.to_thread(scrape_semianalysis_articles)
+    articles = semianalysis_articles
     
     hashed_articles = {}
     for article in articles:
@@ -272,8 +275,8 @@ async def summarize_sector_topic_map():
 
 async def run_full_processing_pipeline():
     logging.info("Starting full news processing pipeline...")
-    # await fetch_and_store_news()
-    # await sort_by_sector_and_topic()
+    await fetch_and_store_news()
+    await sort_by_sector_and_topic()
     await summarize_sector_topic_map()
     logging.info("Full news processing pipeline completed successfully.")
 
